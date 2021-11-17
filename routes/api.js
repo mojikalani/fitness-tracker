@@ -1,44 +1,61 @@
-const API = {
-  async getLastWorkout() {
-    let res;
-    try {
-      res = await fetch('/api/workouts');
-    } catch (err) {
-      console.log(err);
-    }
-    const json = await res.json();
+const router = require("express").Router();
+const db = require("../models/exercise");
 
-    return json[json.length - 1];
-  },
-  async addExercise(data) {
-    const id = location.search.split('=')[1];
+// GET Request for getting all workouts
+router.get("/api/workouts", (req, res) => {
+	db.aggregate([
+	  {
+		$addFields: {
+		  totalDuration: { $sum: "$exercises.duration" },
+		},
+	  },
+	])
+	  .then((workouts) => {
+		res.json(workouts);
+	  })
+	  .catch((err) => {
+		res.status(400).json(err);
+	  });
+  });
 
-    const res = await fetch(`/api/workouts/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+// GET request
+router.get("/api/workouts/range", (req, res) => {
+	db.aggregate([
+	  {
+		$addFields: {
+		  totalDuration: { $sum: "$exercises:duration" },
+		},
+	  },
+	])
+	  .then((stats) => {
+		res.json(stats);
+	  })
+	  .catch((err) => {
+		res.status(400).json(err);
+	  });
+  });
 
-    const json = await res.json();
+// POST workout
+router.post("/api/workouts", (req, res) => {
+	db.create({})
+		.then((dbData) => {
+			res.json(dbData);
+		})
+		.catch((err) => {
+			res.json(err);
+		});
+});
 
-    return json;
-  },
-  async createWorkout(data = {}) {
-    const res = await fetch('/api/workouts', {
-      method: 'POST',
-      body: JSON.stringify(data),
-      headers: { 'Content-Type': 'application/json' },
-    });
+// PUT/Update workout
+router.put("/api/workouts/:id", ({ body, params }, res) => {
+	db.findByIdAndUpdate(params.id, { $push: { exercises: body } })
+		.then((dbData) => {
+			res.json(dbData);
+		})
+		.catch((err) => {
+			res.json(err);
+		});
+});
 
-    const json = await res.json();
 
-    return json;
-  },
-
-  async getWorkoutsInRange() {
-    const res = await fetch('/api/workouts/range');
-    const json = await res.json();
-
-    return json;
-  },
-};
+module.exports = router;
