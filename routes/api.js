@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const db = require("../models/exercise");
+const db = require("../models/workout");
 
 // GET Request for getting all workouts
 router.get("/api/workouts", (req, res) => {
@@ -18,12 +18,12 @@ router.get("/api/workouts", (req, res) => {
 	  });
   });
 
-// GET request
+// GET request for range
 router.get("/api/workouts/range", (req, res) => {
 	db.aggregate([
 	  {
 		$addFields: {
-		  totalDuration: { $sum: "$exercises:duration" },
+		  totalDuration: { $sum: "$exercises.duration" },
 		},
 	  },
 	])
